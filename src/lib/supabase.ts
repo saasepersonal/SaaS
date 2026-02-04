@@ -7,4 +7,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('⚠️ Supabase URL or Anon Key is missing. Check your .env.local file.');
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+// Fallback para evitar errores en tiempo de construcción (build time)
+const url = supabaseUrl || 'https://placeholder.supabase.co';
+const key = supabaseAnonKey || 'placeholder-key';
+
+export const supabase = createBrowserClient(url, key);

@@ -357,7 +357,7 @@ export default function ClientesPage() {
                                                         body: JSON.stringify({
                                                             to: client.email,
                                                             subject: `Recordatorio de ${businessProfile?.business_name || 'Tu Gimnasio'}`,
-                                                            html: `<p>Hola ${client.name}, este es un recordatorio de tu cuota de $${client.monthly_amount}.</p>`,
+                                                            html: `<p>Hola ${client.name}, nos comunicamos desde <strong>${businessProfile?.business_name || 'Mi Negocio'}</strong> para informarte que se acerca el vencimiento de tu cuota por <strong>$${client.monthly_amount}</strong>.</p><p>Por favor abónala antes de que se venza! Muchas gracias!</p>`,
                                                             businessName: businessProfile?.business_name || 'Mi Negocio',
                                                             logoUrl: businessProfile?.logo_url,
                                                             clientName: client.name

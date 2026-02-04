@@ -352,7 +352,7 @@ export default function ClientesPage() {
                                             onClick={async () => {
                                                 if (!confirm('¿Enviar recordatorio por email a ' + client.email + '?')) return;
                                                 try {
-                                                    await fetch('/api/send-email', {
+                                                    const res = await fetch('/api/send-email', {
                                                         method: 'POST',
                                                         body: JSON.stringify({
                                                             to: client.email,
@@ -363,9 +363,12 @@ export default function ClientesPage() {
                                                             clientName: client.name
                                                         })
                                                     });
-                                                    alert('Email enviado!');
-                                                } catch (e) {
-                                                    alert('Error al enviar email');
+                                                    const data = await res.json();
+                                                    if (!res.ok) throw new Error(data.error || 'Error desconocido del servidor');
+
+                                                    alert('Email enviado correctamente! 📧');
+                                                } catch (e: any) {
+                                                    alert('Error al enviar email: ' + e.message);
                                                 }
                                             }}
                                         >

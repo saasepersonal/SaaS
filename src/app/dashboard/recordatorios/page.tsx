@@ -1,20 +1,68 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Bell, Send, CheckCircle, Clock, History, MoreHorizontal } from 'lucide-react';
-
-const mockReminders = [
-    { id: 1, client: 'María González', date: '4 Feb, 2026', type: 'Próximo Vencimiento', status: 'Enviado', method: 'Email' },
-    { id: 2, client: 'Juan Pérez', date: '5 Feb, 2026', type: 'Recordatorio de Pago', status: 'Programado', method: 'WhatsApp' },
-    { id: 3, client: 'Ana Martínez', date: '30 Ene, 2026', type: 'Pago Vencido', status: 'Error', method: 'Email' },
-];
-
-const stats = [
-    { label: 'Enviados Hoy', value: '12', icon: Send, color: 'text-indigo-400' },
-    { label: 'Programados', value: '45', icon: Clock, color: 'text-warning' },
-    { label: 'Entregados', value: '98%', icon: CheckCircle, color: 'text-emerald-400' },
-];
+import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function RecordatoriosPage() {
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState([
+        { label: 'Enviados Hoy', value: '0', icon: Send, color: 'text-indigo-400' },
+        { label: 'Programados', value: '0', icon: Clock, color: 'text-warning' },
+        { label: 'Eficiencia', value: '0%', icon: CheckCircle, color: 'text-emerald-400' },
+    ]);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            setLoading(true);
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data, error } = await supabase
+                    .from('notifications')
+                    .select('*, clients(name)')
+                    .eq('business_id', user.id)
+                    .order('sent_at', { ascending: false });
+
+                if (error) throw error;
+
+                setNotifications(data || []);
+
+                // Calcular estadísticas
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const sentToday = data?.filter(n => {
+                    const sentDate = new Date(n.sent_at);
+                    return sentDate >= today && n.status === 'Enviado';
+                }).length || 0;
+
+                const scheduled = data?.filter(n => n.status === 'Programado').length || 0;
+
+                const total = data?.length || 0;
+                const successful = data?.filter(n => n.status === 'Enviado').length || 0;
+                const efficiency = total > 0 ? Math.round((successful / total) * 100) : 100;
+
+                setStats([
+                    { label: 'Enviados Hoy', value: sentToday.toString(), icon: Send, color: 'text-indigo-400' },
+                    { label: 'Programados', value: scheduled.toString(), icon: Clock, color: 'text-warning' },
+                    { label: 'Eficiencia', value: `${efficiency}%`, icon: CheckCircle, color: 'text-emerald-400' },
+                ]);
+
+            } catch (err) {
+                console.error('Error fetching notifications:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, []);
+
     return (
         <div className="space-y-12 animate-fade-in">
             {/* Header */}
@@ -53,46 +101,59 @@ export default function RecordatoriosPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="text-left text-[10px] uppercase tracking-widest text-secondary/50 font-black border-b border-white/5">
-                                <th className="pb-4 px-2">Alumno</th>
-                                <th className="pb-4 px-2">Tipo de Aviso</th>
-                                <th className="pb-4 px-2">Fecha</th>
-                                <th className="pb-4 px-2">Metodo</th>
-                                <th className="pb-4 px-2">Estado</th>
-                                <th className="pb-4 px-2 text-right">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {mockReminders.map((reminder) => (
-                                <tr key={reminder.id} className="group hover:bg-white/[0.02] transition-colors">
-                                    <td className="py-6 px-2 font-bold text-white">{reminder.client}</td>
-                                    <td className="py-6 px-2 text-secondary text-sm">{reminder.type}</td>
-                                    <td className="py-6 px-2 text-secondary text-sm">{reminder.date}</td>
-                                    <td className="py-6 px-2">
-                                        <span className="text-[10px] font-bold bg-white/5 border border-white/10 px-2 py-1 rounded">
-                                            {reminder.method}
-                                        </span>
-                                    </td>
-                                    <td className="py-6 px-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className={`w-1.5 h-1.5 rounded-full ${reminder.status === 'Enviado' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' :
-                                                    reminder.status === 'Programado' ? 'bg-warning shadow-[0_0_8px_rgba(245,158,11,0.6)]' :
-                                                        'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
-                                                }`} />
-                                            <span className="text-xs font-bold text-white">{reminder.status}</span>
-                                        </div>
-                                    </td>
-                                    <td className="py-6 px-2 text-right">
-                                        <button className="text-secondary hover:text-white transition-colors">
-                                            <MoreHorizontal size={20} />
-                                        </button>
-                                    </td>
+                    {loading ? (
+                        <div className="py-20 text-center animate-pulse text-secondary">Cargando historial...</div>
+                    ) : (
+                        <table className="w-full">
+                            <thead>
+                                <tr className="text-left text-[10px] uppercase tracking-widest text-secondary/50 font-black border-b border-white/5">
+                                    <th className="pb-4 px-2">Alumno</th>
+                                    <th className="pb-4 px-2">Tipo de Aviso</th>
+                                    <th className="pb-4 px-2">Fecha</th>
+                                    <th className="pb-4 px-2">Metodo</th>
+                                    <th className="pb-4 px-2">Estado</th>
+                                    <th className="pb-4 px-2 text-right">Acción</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {notifications.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-10 text-center text-secondary/40">No hay notificaciones enviadas aún.</td>
+                                    </tr>
+                                ) : (
+                                    notifications.map((notification) => (
+                                        <tr key={notification.id} className="group hover:bg-white/[0.02] transition-colors">
+                                            <td className="py-6 px-2 font-bold text-white">{notification.clients?.name || 'Alumno eliminado'}</td>
+                                            <td className="py-6 px-2 text-secondary text-sm">{notification.type}</td>
+                                            <td className="py-6 px-2 text-secondary text-sm">
+                                                {format(new Date(notification.sent_at), "d MMM, HH:mm", { locale: es })}
+                                            </td>
+                                            <td className="py-6 px-2">
+                                                <span className={`text-[10px] font-bold px-2 py-1 rounded border ${notification.method === 'Email' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                                    }`}>
+                                                    {notification.method}
+                                                </span>
+                                            </td>
+                                            <td className="py-6 px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${notification.status === 'Enviado' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' :
+                                                            notification.status === 'Programado' ? 'bg-warning shadow-[0_0_8px_rgba(245,158,11,0.6)]' :
+                                                                'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                                                        }`} />
+                                                    <span className="text-xs font-bold text-white">{notification.status}</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-6 px-2 text-right">
+                                                <button className="text-secondary hover:text-white transition-colors" title={notification.error_message}>
+                                                    <MoreHorizontal size={20} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
         </div>

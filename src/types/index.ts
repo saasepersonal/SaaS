@@ -9,7 +9,31 @@ export interface Client {
     parent_email?: string;
     monthly_amount: number;
     due_day: number; // Día del mes (1-31)
+    is_active?: boolean; // Nuevo campo para desactivar temporalmente
     created_at: string;
+}
+
+export interface ClassItem {
+    id: string;
+    business_id: string;
+    name: string;
+    day_of_week: number; // 1=Lunes, 7=Domingo
+    start_time: string;
+    end_time: string;
+}
+
+export interface Enrollment {
+    id: string;
+    client_id: string;
+    class_id: string;
+}
+
+export interface Attendance {
+    id: string;
+    class_id: string;
+    client_id: string;
+    date: string;
+    status: 'present' | 'absent' | 'late';
 }
 
 export interface Payment {

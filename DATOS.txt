@@ -1,0 +1,12 @@
+Project name: SaaS Gestion
+password: dBZ3090#2016
+Project URL: https://dpyfhtulnqvacowuokfs.supabase.co
+
+anon public api key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRweWZodHVsbnF2YWNvd3Vva2ZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjg1MzcsImV4cCI6MjA4NTgwNDUzN30.nWZDhzv_uoTGc11qlC7PsBgk6UT57-mTVgaRr0lXMSE
+
+
+saas gestion: mail
+gunc vxuc ekfd mtle
+
+
+https://github.com/saasepersonal/SaaS.git

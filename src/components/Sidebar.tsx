@@ -10,13 +10,15 @@ import {
     Settings,
     Bell,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    CalendarRange
 } from 'lucide-react';
 
 const menuItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Panel' },
     { href: '/dashboard/clientes', icon: Users, label: 'Clientes' },
     { href: '/dashboard/pagos', icon: CreditCard, label: 'Pagos' },
+    { href: '/dashboard/organizacion', icon: CalendarRange, label: 'Organización' },
     { href: '/dashboard/recordatorios', icon: Bell, label: 'Recordatorios' },
     { href: '/dashboard/configuracion', icon: Settings, label: 'Configuración' },
 ];

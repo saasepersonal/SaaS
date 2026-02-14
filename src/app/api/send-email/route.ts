@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
-import { supabaseServer } from '@/lib/supabase-server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
     try {
@@ -12,6 +13,28 @@ export async function POST(request: Request) {
                 { status: 500 }
             );
         }
+
+        const cookieStore = await cookies();
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll();
+                    },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            );
+                        } catch {
+                            // Ignored if called from a Server Component
+                        }
+                    },
+                },
+            }
+        );
 
         let result;
         let errorMsg = null;
@@ -34,7 +57,7 @@ export async function POST(request: Request) {
 
         // Registrar en la base de datos si tenemos la info necesaria
         if (clientId && businessId) {
-            await supabaseServer.from('notifications').insert({
+            const { error: dbError } = await supabase.from('notifications').insert({
                 business_id: businessId,
                 client_id: clientId,
                 type: type || 'Email Informativo',
@@ -42,6 +65,10 @@ export async function POST(request: Request) {
                 status: status,
                 error_message: errorMsg
             });
+
+            if (dbError) {
+                console.error('Database Insert Error (Notifications):', dbError);
+            }
         }
 
         if (status === 'Error') {

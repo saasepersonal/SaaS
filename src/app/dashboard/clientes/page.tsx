@@ -438,13 +438,17 @@ export default function ClientesPage() {
                                                 onClick={async () => {
                                                     // Registrar la notificación de WhatsApp en la DB
                                                     if (user) {
-                                                        await supabase.from('notifications').insert({
+                                                        const { error } = await supabase.from('notifications').insert({
                                                             business_id: user.id,
                                                             client_id: client.id,
                                                             type: client.status === 'Vencido' ? 'Pago Vencido' : 'Recordatorio de Pago',
                                                             method: 'WhatsApp',
                                                             status: 'Enviado'
                                                         });
+                                                        if (error) {
+                                                            console.error('Error al guardar recordatorio WA:', error);
+                                                            alert('Aviso: El mensaje se enviará pero no se pudo guardar en el historial: ' + error.message);
+                                                        }
                                                     }
                                                 }}
                                             >
